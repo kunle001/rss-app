@@ -45,3 +45,17 @@ func ( apiCfg *apiConfig) handlerCreateuser(w http.ResponseWriter, r *http.Reque
 func ( apiCfg *apiConfig) handlerGetUser(w http.ResponseWriter, r *http.Request, user database.User){
 		respondWithJson(w, 200,databaseUserToUser(user))
 }
+
+func ( apiCfg *apiConfig) handlerGetPostForUser(w http.ResponseWriter, r *http.Request, user database.User){
+	data, err := apiCfg.DB.GetPosForUser(r.Context(), database.GetPosForUserParams{
+		UserID: user.ID,
+		Limit: 10,
+	});
+
+	if err != nil{
+		respondWithError(w,400, fmt.Sprintf("Something went wrong in getting the datta %v", err))
+	}
+
+
+	respondWithJson(w, 200,data)
+}

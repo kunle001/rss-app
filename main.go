@@ -2,17 +2,17 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/cors"
 	"github.com/joho/godotenv"
 	"github.com/kunle001/rss-app/internal/database"
 
-	_ "github.com/lib/pq"
+	_ "github.com/lib/pq" //include this irrespective if it is used or not
 )
 
 type apiConfig struct{
@@ -20,7 +20,7 @@ type apiConfig struct{
 }
 
 func main(){
-	fmt.Println("hello world")
+
 	godotenv.Load(".env")
 	portString :=os.Getenv("PORT") 
 	if portString==""{
@@ -37,11 +37,13 @@ func main(){
 		log.Fatal(("Can't connect to DB"))
 	};
 
-	
 
+		db:= database.New(conn)
 	apiCfg := apiConfig{
-		DB: database.New(conn),
+		DB: db,
 	}
+
+	go startScrapping(db,  10, time.Minute)
 
 	router:= chi.NewRouter()
 
@@ -66,6 +68,8 @@ func main(){
 	v1Router.Post("/follow-feed",apiCfg.middlewareAuth(apiCfg.handlerCreateFeedFollow))
 	v1Router.Get("/my-feed-followers",apiCfg.middlewareAuth(apiCfg.handlerGetMyFeedFollowers))
 	v1Router.Delete("/unfollow-feed/{feedId}",apiCfg.middlewareAuth(apiCfg.handlerUnfollowFeed))
+	v1Router.Delete("/unfollow-feed/{feedId}",apiCfg.middlewareAuth(apiCfg.handlerUnfollowFeed))
+	v1Router.Get("/my-post-feed",apiCfg.middlewareAuth(apiCfg.handlerGetPostForUser))
 
 	// mounting the router 
 	router.Mount("/v1", v1Router)
